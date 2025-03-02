@@ -2,7 +2,7 @@
 
 PeerGPT is a peer-to-peer (P2P) chat application with integrated AI assistance—built for the hackathon! It leverages the power of distributed Hypercores and Hyperswarm for real-time replication of chat history and uses the OpenAI GPT-3.5-turbo model as an AI chat assistant. Built on the Pear platform with Bare modules, PeerGPT runs as a terminal application and requires no centralized server.
 
-![NoteGPT-Flowchart-1740919288626](https://github.com/user-attachments/assets/f8005514-3a5a-4a80-a1e5-516b7826f0d3)
+![NoteGPT-Flowchart-1740919393212](https://github.com/user-attachments/assets/a683e39e-59ba-42ce-8f94-dcea7ea703b5)
 
 
 ---
