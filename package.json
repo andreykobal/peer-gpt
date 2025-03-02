@@ -1,0 +1,32 @@
+{
+  "name": "peer-gpt-deepseek",
+  "main": "index.js",
+  "pear": {
+    "name": "peer-gpt-deepseek",
+    "type": "terminal"
+  },
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "pear run -d .",
+    "test": "brittle test/*.test.js"
+  },
+  "devDependencies": {
+    "brittle": "^3.0.0",
+    "pear-interface": "^1.0.0"
+  },
+  "dependencies": {
+    "b4a": "^1.6.7",
+    "bare-os": "^3.5.1",
+    "bare-path": "^3.0.0",
+    "bare-process": "^4.1.2",
+    "bare-readline": "^1.0.7",
+    "bare-tty": "^5.0.1",
+    "hypercore-crypto": "^3.5.0",
+    "hyperswarm": "^4.8.4",
+    "node-llama-cpp": "^3.6.0"
+  },
+  "imports": {
+    "os": "./os.js"
+  }
+}
