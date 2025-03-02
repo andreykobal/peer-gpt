@@ -24,9 +24,7 @@
     "bare-tty": "^5.0.1",
     "hypercore-crypto": "^3.5.0",
     "hyperswarm": "^4.8.4",
-    "node-llama-cpp": "^3.6.0"
-  },
-  "imports": {
-    "os": "./os.js"
+    "node-llama-cpp": "^3.6.0",
+    "os": "npm:bare-node-os"
   }
 }
