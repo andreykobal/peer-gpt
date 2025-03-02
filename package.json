@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "b4a": "^1.6.7",
+    "bare-http1": "^4.0.2",
     "bare-os": "^3.5.1",
     "bare-path": "^3.0.0",
     "bare-process": "^4.1.2",

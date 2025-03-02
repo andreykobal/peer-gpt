@@ -7,6 +7,7 @@ import b4a from 'b4a';
 import crypto from 'hypercore-crypto';
 import Hypercore from 'hypercore';
 import RAM from 'random-access-memory';
+import http from 'bare-http1';
 
 // Debug flag: if true, use RAM storage for Hypercore
 const USE_RAM_STORAGE = true;
@@ -142,7 +143,7 @@ async function main() {
         input: new tty.ReadStream(0),
         output: new tty.WriteStream(1)
     });
-    // Note: bare-readline does not support setPrompt, so we manually write the prompt.
+    // Manually write the prompt, as bare-readline does not support setPrompt.
     process.stdout.write("You: ");
     rl.input.setMode(tty.constants.MODE_RAW);
     console.log("[DEBUG] Readline interface ready.");
@@ -169,25 +170,44 @@ async function main() {
         }
         console.log("[DEBUG] Context built. Context length:", context.length);
 
-        // Call the OpenAI Chat API with the context.
+        // Call the OpenAI Chat API using bare-http1.
         try {
-            console.log("[DEBUG] Calling OpenAI API with context...");
-            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            console.log("[DEBUG] Calling OpenAI API with context using bare-http1...");
+            const options = {
                 method: "POST",
+                protocol: "https:",
+                hostname: "api.openai.com",
+                port: 443,
+                path: "/v1/chat/completions",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-3.5-turbo",
-                    messages: context
-                })
+                }
+            };
+            const requestBody = JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: context
             });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            const reply = data.choices[0].message.content.trim();
+            const reply = await new Promise((resolve, reject) => {
+                const req = http.request(options, (res) => {
+                    let data = "";
+                    res.on('data', (chunk) => { data += chunk; });
+                    res.on('end', () => {
+                        if (res.statusCode < 200 || res.statusCode >= 300) {
+                            return reject(new Error(`HTTP error! status: ${res.statusCode}`));
+                        }
+                        try {
+                            const parsed = JSON.parse(data);
+                            resolve(parsed.choices[0].message.content.trim());
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                });
+                req.on('error', (err) => { reject(err); });
+                req.write(requestBody);
+                req.end();
+            });
             console.log("[DEBUG] Received reply from OpenAI:", reply);
             await historyCore.append({ role: 'assistant', content: reply });
         } catch (error) {
