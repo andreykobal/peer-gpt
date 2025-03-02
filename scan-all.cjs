@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-// List of Node.js built-in modules
+// List of all Node.js built-in modules
 const builtins = new Set([
     "assert", "buffer", "child_process", "cluster", "crypto", "dgram", "dns",
     "domain", "events", "fs", "http", "https", "net", "os", "path", "process",
@@ -11,7 +11,28 @@ const builtins = new Set([
     "timers", "tls", "tty", "url", "util", "v8", "vm", "zlib"
 ]);
 
-// Recursively traverses all files in a directory and scans files with .js or .mjs extension
+// Set of built-in modules that have Bare-compatible alternatives (from Bare Reference)
+const bareSupported = new Set([
+    "assert",    // bare-assert
+    "buffer",    // bare-buffer
+    "child_process", // bare-subprocess
+    "events",    // bare-events
+    "fs",        // bare-fs
+    "http",      // bare-http1
+    "os",        // bare-os
+    "path",      // bare-path
+    "process",   // bare-process
+    "readline",  // bare-readline
+    "repl",      // bare-repl
+    "timers",    // bare-timers
+    "tty",       // bare-tty
+    "url"        // bare-url
+]);
+
+// Global set to collect non-replaceable built-ins found in the code
+const nonReplaceableFound = new Set();
+
+// Recursively traverse all files in a directory and scan for .js/.mjs files
 function scanDirectory(dir) {
     try {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -28,7 +49,7 @@ function scanDirectory(dir) {
     }
 }
 
-// Scans a single file line by line
+// Scan a file line by line and check for built-in module imports or requires
 function scanFile(filePath) {
     let content;
     try {
@@ -39,28 +60,35 @@ function scanFile(filePath) {
     }
     const lines = content.split(/\r?\n/);
     lines.forEach((line, index) => {
-        // Check for import ... from '...'
+        // Check for "import ... from '...'"
         const importMatch = line.match(/import\s+.*\s+from\s+['"]([^'"]+)['"]/);
         if (importMatch) {
             let modName = importMatch[1].replace(/^node:/, '');
             if (builtins.has(modName)) {
                 console.log(`${filePath}:${index + 1}: ${line.trim()}`);
+                if (!bareSupported.has(modName)) {
+                    nonReplaceableFound.add(modName);
+                }
             }
         }
-        // Check for require('...')
+        // Check for "require('...')"
         const requireMatch = line.match(/require\(\s*['"]([^'"]+)['"]\s*\)/);
         if (requireMatch) {
             let modName = requireMatch[1].replace(/^node:/, '');
             if (builtins.has(modName)) {
                 console.log(`${filePath}:${index + 1}: ${line.trim()}`);
+                if (!bareSupported.has(modName)) {
+                    nonReplaceableFound.add(modName);
+                }
             }
         }
     });
 }
 
 /**
- * Function to determine the dependency directory.
- * First, it looks in the parent's node_modules folder; if not found, then in the root node_modules.
+ * Determines the directory for a dependency.
+ * It first looks in the parent's node_modules folder,
+ * then in the root node_modules.
  */
 function getDepDirectory(parentDir, depName) {
     let candidate = path.join(parentDir, "node_modules", depName);
@@ -80,7 +108,7 @@ function scanDepsRecursively(depDir, scannedSet) {
     console.log(`\n=== Scanning dependency: ${depDir} ===`);
     scanDirectory(depDir);
 
-    // Try reading package.json for this dependency
+    // Attempt to read package.json for this dependency
     const pkgPath = path.join(depDir, 'package.json');
     let pkg;
     try {
@@ -91,7 +119,7 @@ function scanDepsRecursively(depDir, scannedSet) {
     }
     const deps = pkg.dependencies || {};
     for (const depName of Object.keys(deps)) {
-        // First, look for the dependency inside the current dependency,
+        // First, try to locate the dependency inside the current dependency folder,
         // then in the root node_modules
         const childDepDir = getDepDirectory(depDir, depName) || getDepDirectory(process.cwd(), depName);
         if (childDepDir) {
@@ -103,14 +131,14 @@ function scanDepsRecursively(depDir, scannedSet) {
 }
 
 /**
- * Scans the library and its dependencies (recursively).
+ * Scans the target library and all its dependencies recursively.
  */
 function scanLibraryAndAllDeps(targetDir) {
     console.log(`\n=== Scanning library: ${targetDir} ===`);
     scanDirectory(targetDir);
 
     const scannedDeps = new Set();
-    // Try reading package.json of the main library
+    // Read the main library's package.json
     const pkgPath = path.join(targetDir, 'package.json');
     let pkg;
     try {
@@ -130,7 +158,19 @@ function scanLibraryAndAllDeps(targetDir) {
     }
 }
 
-// Main target directory to scan (by default node_modules/node-llama-cpp)
+// Main target directory (defaults to node_modules/node-llama-cpp)
 const targetDir = process.argv[2] || path.join(process.cwd(), "node_modules", "node-llama-cpp");
 
 scanLibraryAndAllDeps(targetDir);
+
+// Print non-replaceable modules in red if any were found
+if (nonReplaceableFound.size > 0) {
+    const red = "\x1b[31m";
+    const reset = "\x1b[0m";
+    console.log(`${red}\nThe following built-in modules were found that have no Bare-compatible alternative:${reset}`);
+    for (const mod of nonReplaceableFound) {
+        console.log(`${red}${mod}${reset}`);
+    }
+} else {
+    console.log("\nAll built-in modules found have Bare-compatible alternatives.");
+}
