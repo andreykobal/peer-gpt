@@ -22,9 +22,11 @@
     "bare-process": "^4.1.2",
     "bare-readline": "^1.0.7",
     "bare-tty": "^5.0.1",
+    "hypercore": "^10.38.2",
     "hypercore-crypto": "^3.5.0",
     "hyperswarm": "^4.8.4",
     "node-llama-cpp": "^3.6.0",
-    "os": "npm:bare-node-os"
+    "os": "npm:bare-node-os",
+    "random-access-memory": "^6.2.1"
   }
 }
