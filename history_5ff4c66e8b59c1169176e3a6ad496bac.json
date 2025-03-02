@@ -1,0 +1,22 @@
+[
+  {
+    "role": "system",
+    "content": "You are a helpful assistant."
+  },
+  {
+    "role": "user",
+    "content": "Hey there"
+  },
+  {
+    "role": "assistant",
+    "content": "Hello! How can I help you today?"
+  },
+  {
+    "role": "user",
+    "content": "Are you good?"
+  },
+  {
+    "role": "assistant",
+    "content": "I'm just a computer program, so I don't have feelings, but I'm here and ready to assist you with anything you need. How can I help you today?"
+  }
+]
